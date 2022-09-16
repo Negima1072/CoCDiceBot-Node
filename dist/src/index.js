@@ -172,11 +172,12 @@ app.get('/webhook', (req, res) => {
 });
 app.post('/webhook', (req, res, next) => {
     try {
+        console.log(req.body);
         if (req.body.tweet_create_events) {
             req.body.tweet_create_events.forEach((ev) => {
                 if (!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")) {
                     if (ev.user.id_str !== "1461318388433956865") {
-                        const text = decodeURI(ev.text);
+                        const text = decodeURIComponent(ev.text);
                         if (text.includes(" ")) {
                             let reqTxt = "";
                             text.split(" ").forEach((c) => {
@@ -205,7 +206,7 @@ app.post('/webhook', (req, res, next) => {
         if (req.body.direct_message_events) {
             req.body.direct_message_events.forEach((ev) => {
                 if (ev.message_create.sender_id != "1461318388433956865") {
-                    const text = decodeURI(ev.message_create.message_data.text);
+                    const text = decodeURIComponent(ev.message_create.message_data.text);
                     if (text.startsWith("help")) {
                         sendDM(helpMes, ev.message_create.sender_id);
                     }
