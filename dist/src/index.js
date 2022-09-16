@@ -4,15 +4,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const bcdice_1 = require("bcdice");
-async function getDiceroll(command) {
-    const loader = new bcdice_1.DynamicLoader();
-    const GameSystem = await loader.dynamicLoad('Cthulhu7th');
+let GameSystem;
+const loader = new bcdice_1.DynamicLoader();
+loader.dynamicLoad('Cthulhu7th').then((v) => {
+    GameSystem = v;
+});
+function getDiceroll(command) {
     const result = GameSystem.eval(command);
     if (!result)
         return "";
     return result.text;
 }
-async function getDiceVersion() {
+function getDiceVersion() {
     return bcdice_1.Version;
 }
 const helpMes = `・判定　CC(x)<=（目標値）
@@ -138,7 +141,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
     try {
         res.sendStatus(404);
     }
@@ -146,15 +149,15 @@ app.get('/', async (req, res) => {
         res.sendStatus(500);
     }
 });
-app.get('/version', async (req, res) => {
+app.get('/version', (req, res) => {
     try {
-        res.send({ version: await getDiceVersion() });
+        res.send({ version: getDiceVersion() });
     }
     catch (error) {
         res.sendStatus(500);
     }
 });
-app.get('/webhook', async (req, res) => {
+app.get('/webhook', (req, res) => {
     try {
         if (!req.query.crc_token)
             res.sendStatus(400);
@@ -167,10 +170,10 @@ app.get('/webhook', async (req, res) => {
         res.sendStatus(500);
     }
 });
-app.post('/webhook', async (req, res) => {
+app.post('/webhook', (req, res, next) => {
     try {
         if (req.body.tweet_create_events) {
-            req.body.tweet_create_events.forEach(async (ev) => {
+            req.body.tweet_create_events.forEach((ev) => {
                 if (!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")) {
                     if (ev.user.id_str !== "1461318388433956865") {
                         const text = decodeURI(ev.text);
@@ -182,7 +185,7 @@ app.post('/webhook', async (req, res) => {
                                     reqTxt += " ";
                                 }
                             });
-                            let resTxt = await getDiceroll(reqTxt);
+                            let resTxt = getDiceroll(reqTxt);
                             if (resTxt) {
                                 let resTxt2 = "@" + ev.user.screen_name + " " + resTxt;
                                 if (resTxt2.length >= 140) {
@@ -200,14 +203,14 @@ app.post('/webhook', async (req, res) => {
             });
         }
         if (req.body.direct_message_events) {
-            req.body.direct_message_events.forEach(async (ev) => {
+            req.body.direct_message_events.forEach((ev) => {
                 if (ev.message_create.sender_id != "1461318388433956865") {
                     const text = decodeURI(ev.message_create.message_data.text);
                     if (text.startsWith("help")) {
                         sendDM(helpMes, ev.message_create.sender_id);
                     }
                     else {
-                        let resTxt = await getDiceroll(text);
+                        let resTxt = getDiceroll(text);
                         if (resTxt != "") {
                             sendDM(resTxt, ev.message_create.sender_id);
                         }

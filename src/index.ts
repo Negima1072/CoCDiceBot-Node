@@ -1,14 +1,18 @@
 import { DynamicLoader, Version } from 'bcdice';
 
-async function getDiceroll(command: string): Promise<string>{
-  const loader = new DynamicLoader();
-  const GameSystem = await loader.dynamicLoad('Cthulhu7th');
+let GameSystem: game_system;
+const loader = new DynamicLoader();
+loader.dynamicLoad('Cthulhu7th').then((v) => {
+  GameSystem = v;
+});
+
+function getDiceroll(command: string): string{
   const result = GameSystem.eval(command);
   if(!result) return "";
   return result.text;
 }
 
-async function getDiceVersion(): Promise<string>{
+function getDiceVersion(): string{
   return Version;
 }
 
@@ -141,12 +145,13 @@ function sendDM(content: string, senderId: string){
 
 import express, { Request, Response } from "express";
 import crypto from "crypto";
+import game_system from 'bcdice/lib/game_system';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', async (req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
   try {
     res.sendStatus(404);
   } catch (error) {
@@ -154,9 +159,9 @@ app.get('/', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/version', async (req: Request, res: Response) => {
+app.get('/version', (req: Request, res: Response) => {
   try {
-    res.send({ version: await getDiceVersion() });
+    res.send({ version: getDiceVersion() });
   } catch (error) {
     res.sendStatus(500);
   }
@@ -198,7 +203,7 @@ interface WebhookPostRequest extends Request {
   }
 }
 
-app.get('/webhook', async (req: WebhookGetRequest, res: Response) => {
+app.get('/webhook', (req: WebhookGetRequest, res: Response) => {
   try {
     if(!req.query.crc_token) res.sendStatus(400);
     else{
@@ -210,10 +215,10 @@ app.get('/webhook', async (req: WebhookGetRequest, res: Response) => {
   }
 });
 
-app.post('/webhook', async (req: WebhookPostRequest, res: Response) => {
+app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
   try{
     if(req.body.tweet_create_events){
-      req.body.tweet_create_events.forEach(async (ev) => {
+      req.body.tweet_create_events.forEach((ev) => {
         if(!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")){
           if(ev.user.id_str !== "1461318388433956865"){
             const text = decodeURI(ev.text);
@@ -225,7 +230,7 @@ app.post('/webhook', async (req: WebhookPostRequest, res: Response) => {
                   reqTxt += " ";
                 }
               });
-              let resTxt = await getDiceroll(reqTxt);
+              let resTxt = getDiceroll(reqTxt);
               if(resTxt){
                 let resTxt2 = "@" + ev.user.screen_name + " " + resTxt;
                 if(resTxt2.length >= 140){
@@ -243,14 +248,14 @@ app.post('/webhook', async (req: WebhookPostRequest, res: Response) => {
       })
     }
     if(req.body.direct_message_events){
-      req.body.direct_message_events.forEach(async (ev) => {
+      req.body.direct_message_events.forEach((ev) => {
         if(ev.message_create.sender_id != "1461318388433956865"){
           const text = decodeURI(ev.message_create.message_data.text);
           if(text.startsWith("help")){
             sendDM(helpMes, ev.message_create.sender_id)
           }
           else{
-            let resTxt = await getDiceroll(text);
+            let resTxt = getDiceroll(text);
             if(resTxt != ""){
               sendDM(resTxt, ev.message_create.sender_id)
             }
