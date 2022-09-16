@@ -64,9 +64,6 @@ S3d6 ：各コマンドの先頭に「S」を付けると他人には見えな�
 D66 ：D66ダイス。順序はゲームに依存（D66N：そのまま、D66S：昇順）
 https://docs.bcdice.org/`;
 const twit_1 = __importDefault(require("twit"));
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
-}
 const consumer_key = process.env.CONSUMER_KEY;
 const consumer_secret = process.env.CONSUMER_SECRET;
 const access_token = process.env.ACCESS_TOKEN_KEY;

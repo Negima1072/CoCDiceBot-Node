@@ -64,10 +64,6 @@ https://docs.bcdice.org/`;
 
 import twitter from "twit";
 
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
-
 const consumer_key = process.env.CONSUMER_KEY;
 const consumer_secret = process.env.CONSUMER_SECRET;
 const access_token = process.env.ACCESS_TOKEN_KEY;
