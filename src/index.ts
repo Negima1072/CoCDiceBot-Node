@@ -7,9 +7,7 @@ loader.dynamicLoad('Cthulhu7th').then((v) => {
 });
 
 function getDiceroll(command: string): string{
-  console.log(command);
   const result = GameSystem.eval(command);
-  console.log(result);
   if(!result) return "";
   return result.text;
 }
@@ -17,6 +15,12 @@ function getDiceroll(command: string): string{
 function getDiceVersion(): string{
   return Version;
 }
+
+const htmlDecode = function(str: string) {
+  return str.replace(/\&amp\;/g, '\&').replace(/\&gt\;/g, '\>').replace(
+        /\&lt\;/g, '\<').replace(/\&quot\;/g, '\'').replace(/\&\#39\;/g,
+        '\'');/*from w  w  w.  j  ava2 s.c o m*/
+};
 
 const helpMes = `・判定　CC(x)<=（目標値）
 　x：ボーナス・ペナルティダイス。省略可。
@@ -91,7 +95,7 @@ const twitterClient = new twitter({
 function postTweet(content: string, replyId: string){
   twitterClient.post("statuses/update", {status: content, in_reply_to_status_id: replyId}, (error) => {
     if(error){
-      console.log(error);
+      console.log("98",error);
     }
   });
 }
@@ -105,38 +109,13 @@ function sendDM(content: string, senderId: string){
           recipient_id: senderId
         },
         message_data: {
-          text: content,
-          quick_reply: {
-            type: "options",
-            options: [
-              {
-                label: "help",
-                description: "Show help message",
-                metadata: "external_id_3"
-              },
-              {
-                label: "1d100",
-                description: "Random from 1 to 100",
-                metadata: "external_id_1"
-              },
-              {
-                label: "cc<=50",
-                description: "50% success",
-                metadata: "external_id_2"
-              },
-              {
-                "label": "MA",
-                description: "Sample Manias",
-                metadata: "external_id_4"
-              }
-            ]
-          }
+          text: content
         }
       }
     }
   } as twitter.Params, (error) => {
     if(error){
-      console.log(error);
+      console.log("118",error);
     }
   });
 }
@@ -209,6 +188,7 @@ app.get('/webhook', (req: WebhookGetRequest, res: Response) => {
       res.send({ response_token: "sha256=" + hmac });
     }
   } catch (error) {
+    console.log("191",error);
     res.sendStatus(500);
   }
 });
@@ -217,10 +197,9 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
   try{
     if(req.body.tweet_create_events){
       req.body.tweet_create_events.forEach((ev) => {
-        console.log(ev);
         if(!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")){
           if(ev.user.id_str !== "1461318388433956865"){
-            const text = decodeURIComponent(ev.text);
+            const text = htmlDecode(decodeURIComponent(ev.text));
             if(text.includes(" ")){
               let reqTxt = "";
               text.split(" ").forEach((c) => {
@@ -250,7 +229,7 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
       req.body.direct_message_events.forEach((ev) => {
         console.log(ev);
         if(ev.message_create.sender_id != "1461318388433956865"){
-          const text = decodeURIComponent(ev.message_create.message_data.text);
+          const text = htmlDecode(decodeURIComponent(ev.message_create.message_data.text));
           if(text.startsWith("help")){
             sendDM(helpMes, ev.message_create.sender_id)
           }
@@ -265,6 +244,7 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
     }
     res.send({status: "success"});
   } catch (error) {
+    console.log("247",error);
     res.sendStatus(500);
   }
 })
