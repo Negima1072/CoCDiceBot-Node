@@ -140,68 +140,82 @@ app.get('/webhook', (req, res) => {
 });
 app.post('/webhook', (req, res, next) => {
     try {
+        if (!req.body.tweet_create_events && !req.body.direct_message_events) {
+            res.send({ status: "none" });
+        }
         if (req.body.tweet_create_events) {
-            req.body.tweet_create_events.forEach((ev) => {
-                if (!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")) {
-                    if (ev.user.id_str !== "1461318388433956865") {
-                        const text = htmlDecode(decodeURIComponent(ev.text));
-                        if (text.includes(" ")) {
-                            let reqTxt = "";
-                            text.split(" ").forEach((c) => {
-                                if (c.slice(0, 1) != "@") {
-                                    reqTxt += c;
-                                    reqTxt += " ";
-                                }
-                            });
-                            let resTxt = getDiceroll(reqTxt);
-                            if (resTxt) {
-                                let resTxt2 = "@" + ev.user.screen_name + " " + resTxt;
-                                if (resTxt2.length >= 140) {
-                                    resTxt2 = resTxt.slice(0, 139) + "…";
-                                    sendDM("リプライの続き：" + resTxt, ev.user.id_str, (er) => {
-                                        postTweet(resTxt2, ev.id, () => {
-                                            res.send({ data: "success" });
-                                        });
-                                    });
-                                }
-                                else {
+            const ev = req.body.tweet_create_events[0];
+            if (!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")) {
+                if (ev.user.id_str !== "1461318388433956865") {
+                    const text = htmlDecode(decodeURIComponent(ev.text));
+                    if (text.includes(" ")) {
+                        let reqTxt = "";
+                        text.split(" ").forEach((c) => {
+                            if (c.slice(0, 1) != "@") {
+                                reqTxt += c;
+                                reqTxt += " ";
+                            }
+                        });
+                        let resTxt = getDiceroll(reqTxt);
+                        if (resTxt) {
+                            let resTxt2 = "@" + ev.user.screen_name + " " + resTxt;
+                            if (resTxt2.length >= 140) {
+                                resTxt2 = resTxt.slice(0, 139) + "…";
+                                sendDM("リプライの続き：" + resTxt, ev.user.id_str, (er) => {
                                     postTweet(resTxt2, ev.id, () => {
                                         res.send({ data: "success" });
                                     });
-                                }
+                                });
                             }
                             else {
-                                postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id, () => {
-                                    res.send({ data: "error" });
+                                postTweet(resTxt2, ev.id, () => {
+                                    res.send({ data: "success" });
                                 });
                             }
                         }
+                        else {
+                            postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id, () => {
+                                res.send({ data: "error" });
+                            });
+                        }
+                    }
+                    else {
+                        res.send({ status: "none" });
                     }
                 }
-            });
+                else {
+                    res.send({ status: "none" });
+                }
+            }
+            else {
+                res.send({ status: "none" });
+            }
         }
         if (req.body.direct_message_events) {
-            req.body.direct_message_events.forEach((ev) => {
-                console.log(ev);
-                if (ev.message_create.sender_id != "1461318388433956865") {
-                    const text = htmlDecode(decodeURIComponent(ev.message_create.message_data.text));
-                    if (text.startsWith("help")) {
-                        sendDM(helpMes, ev.message_create.sender_id, () => {
+            const ev = req.body.direct_message_events[0];
+            if (ev.message_create.sender_id != "1461318388433956865") {
+                const text = htmlDecode(decodeURIComponent(ev.message_create.message_data.text));
+                if (text.startsWith("help")) {
+                    sendDM(helpMes, ev.message_create.sender_id, () => {
+                        res.send({ data: "success" });
+                    });
+                }
+                else {
+                    let resTxt = getDiceroll(text);
+                    if (resTxt != "") {
+                        sendDM(resTxt, ev.message_create.sender_id, () => {
                             res.send({ data: "success" });
                         });
                     }
                     else {
-                        let resTxt = getDiceroll(text);
-                        if (resTxt != "") {
-                            sendDM(resTxt, ev.message_create.sender_id, () => {
-                                res.send({ data: "success" });
-                            });
-                        }
+                        res.send({ status: "none" });
                     }
                 }
-            });
+            }
+            else {
+                res.send({ status: "none" });
+            }
         }
-        res.send({ status: "none" });
     }
     catch (error) {
         console.log("247", error);
