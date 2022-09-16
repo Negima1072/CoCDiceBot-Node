@@ -17,9 +17,9 @@ function getDiceVersion(): string{
 }
 
 const htmlDecode = function(str: string) {
-  return str.replace(/\&amp\;/g, '\&').replace(/\&gt\;/g, '\>').replace(
-        /\&lt\;/g, '\<').replace(/\&quot\;/g, '\'').replace(/\&\#39\;/g,
-        '\'');/*from w  w  w.  j  ava2 s.c o m*/
+  return str.replace("&amp;", '&').replace("&gt;", '>').replace(
+        "&lt;", '<').replace("&quot", "'").replace("&#39",
+        "'");/*from w  w  w.  j  ava2 s.c o m*/
 };
 
 const helpMes = `・判定　CC(x)<=（目標値）
@@ -92,15 +92,11 @@ const twitterClient = new twitter({
   access_token_secret: access_token_secret
 });
 
-function postTweet(content: string, replyId: string){
-  twitterClient.post("statuses/update", {status: content, in_reply_to_status_id: replyId}, (error) => {
-    if(error){
-      console.log("98",error);
-    }
-  });
+function postTweet(content: string, replyId: string, callback: twitter.Callback){
+  twitterClient.post("statuses/update", {status: content, in_reply_to_status_id: replyId}, callback);
 }
 
-function sendDM(content: string, senderId: string){
+function sendDM(content: string, senderId: string, callback: twitter.Callback){
   twitterClient.post("direct_messages/events/new", {
     event: {
       type: "message_create",
@@ -113,11 +109,7 @@ function sendDM(content: string, senderId: string){
         }
       }
     }
-  } as twitter.Params, (error) => {
-    if(error){
-      console.log("118",error);
-    }
-  });
+  } as twitter.Params, callback);
 }
 
 import express, { Request, Response } from "express";
@@ -213,12 +205,22 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
                 let resTxt2 = "@" + ev.user.screen_name + " " + resTxt;
                 if(resTxt2.length >= 140){
                   resTxt2 = resTxt.slice(0,139) + "…";
-                  sendDM("リプライの続き："+resTxt, ev.user.id_str);
+                  sendDM("リプライの続き："+resTxt, ev.user.id_str, (er) => {
+                    postTweet(resTxt2, ev.id, () => {
+                      res.send({data: "success"});
+                    });
+                  });
                 }
-                postTweet(resTxt2, ev.id);
+                else{
+                  postTweet(resTxt2, ev.id, () => {
+                    res.send({data: "success"});
+                  });
+                }
               }
               else{
-                postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id)
+                postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id, () => {
+                  res.send({data: "error"});
+                })
               }
             }
           }
@@ -231,18 +233,22 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
         if(ev.message_create.sender_id != "1461318388433956865"){
           const text = htmlDecode(decodeURIComponent(ev.message_create.message_data.text));
           if(text.startsWith("help")){
-            sendDM(helpMes, ev.message_create.sender_id)
+            sendDM(helpMes, ev.message_create.sender_id, () => {
+              res.send({data: "success"});
+            });
           }
           else{
             let resTxt = getDiceroll(text);
             if(resTxt != ""){
-              sendDM(resTxt, ev.message_create.sender_id)
+              sendDM(resTxt, ev.message_create.sender_id, () => {
+                res.send({data: "success"});
+              });
             }
           }
         }
       })
     }
-    res.send({status: "success"});
+    res.send({status: "none"});
   } catch (error) {
     console.log("247",error);
     res.sendStatus(500);
