@@ -260,6 +260,7 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
         }
       })
     }
+    res.send({status: "success"});
   } catch (error) {
     res.sendStatus(500);
   }

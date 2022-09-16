@@ -216,6 +216,7 @@ app.post('/webhook', (req, res, next) => {
                 }
             });
         }
+        res.send({ status: "success" });
     }
     catch (error) {
         res.sendStatus(500);
