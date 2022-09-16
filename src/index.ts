@@ -210,7 +210,7 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
             });
             let resTxt = getDiceroll(reqTxt);
             if(resTxt){
-              let resTxt2 = "@" + ev.user.screen_name + " " + resTxt;
+              let resTxt2 = /*"@" + ev.user.screen_name + " " +*/ resTxt;
               if(resTxt2.length >= 140){
                 resTxt2 = resTxt.slice(0,139) + "…";
                 sendDM("リプライの続き："+resTxt, ev.user.id_str, (er) => {
