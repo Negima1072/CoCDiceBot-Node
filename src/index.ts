@@ -93,7 +93,11 @@ const twitterClient = new twitter({
 });
 
 function postTweet(content: string, replyId: string, callback: twitter.Callback){
-  twitterClient.post("statuses/update", {status: content, in_reply_to_status_id: replyId}, callback);
+  twitterClient.post("statuses/update", {
+    status: content,
+    in_reply_to_status_id: replyId,
+    auto_populate_reply_metadata: true
+  }, callback);
 }
 
 function sendDM(content: string, senderId: string, callback: twitter.Callback){
@@ -143,7 +147,8 @@ interface WebhookGetRequest extends Request {
 }
 
 interface TweetCreateEvent {
-  id: string,
+  id: number,
+  id_str: string,
   retweeted_status: any | undefined,
   user: {
     id_str: string,
@@ -209,19 +214,19 @@ app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
               if(resTxt2.length >= 140){
                 resTxt2 = resTxt.slice(0,139) + "…";
                 sendDM("リプライの続き："+resTxt, ev.user.id_str, (er) => {
-                  postTweet(resTxt2, ev.id, () => {
+                  postTweet(resTxt2, ev.id_str, () => {
                     res.send({data: "success"});
                   });
                 });
               }
               else{
-                postTweet(resTxt2, ev.id, () => {
+                postTweet(resTxt2, ev.id_str, () => {
                   res.send({data: "success"});
                 });
               }
             }
             else{
-              postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id, () => {
+              postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id_str, () => {
                 res.send({data: "error"});
               })
             }

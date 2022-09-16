@@ -86,7 +86,11 @@ const twitterClient = new twit_1.default({
     access_token_secret: access_token_secret
 });
 function postTweet(content, replyId, callback) {
-    twitterClient.post("statuses/update", { status: content, in_reply_to_status_id: replyId }, callback);
+    twitterClient.post("statuses/update", {
+        status: content,
+        in_reply_to_status_id: replyId,
+        auto_populate_reply_metadata: true
+    }, callback);
 }
 function sendDM(content, senderId, callback) {
     twitterClient.post("direct_messages/events/new", {
@@ -162,19 +166,19 @@ app.post('/webhook', (req, res, next) => {
                             if (resTxt2.length >= 140) {
                                 resTxt2 = resTxt.slice(0, 139) + "…";
                                 sendDM("リプライの続き：" + resTxt, ev.user.id_str, (er) => {
-                                    postTweet(resTxt2, ev.id, () => {
+                                    postTweet(resTxt2, ev.id_str, () => {
                                         res.send({ data: "success" });
                                     });
                                 });
                             }
                             else {
-                                postTweet(resTxt2, ev.id, () => {
+                                postTweet(resTxt2, ev.id_str, () => {
                                     res.send({ data: "success" });
                                 });
                             }
                         }
                         else {
-                            postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id, () => {
+                            postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id_str, () => {
                                 res.send({ data: "error" });
                             });
                         }
