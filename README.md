@@ -3,6 +3,8 @@
 A Twitter Bot that returns CoCDice that can be used on Nodejs.
 This repository is a modification of the repository (Python) at the following URL so that it can run on Nodejs.
 
+[Negima1072/CoCDiceTwitterBot](https://github.com/Negima1072/CoCDiceTwitterBot)
+
 ## Sample
 
 The program of this repository is running on the following Twitter account. You can reply or send a direct message.
