@@ -60,10 +60,15 @@ https://docs.bcdice.org/`;
 
 import twitter from "twit";
 
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 const consumer_key = process.env.CONSUMER_KEY;
 const consumer_secret = process.env.CONSUMER_SECRET;
 const access_token = process.env.ACCESS_TOKEN_KEY;
 const access_token_secret = process.env.ACCESS_TOKEN_SECRET;
+
 
 if(!consumer_key || !consumer_secret){
   console.log("Error: Invaid Consumer Key or Secret");
