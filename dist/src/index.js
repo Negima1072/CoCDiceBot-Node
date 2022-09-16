@@ -10,7 +10,9 @@ loader.dynamicLoad('Cthulhu7th').then((v) => {
     GameSystem = v;
 });
 function getDiceroll(command) {
+    console.log(command);
     const result = GameSystem.eval(command);
+    console.log(result);
     if (!result)
         return "";
     return result.text;
@@ -169,9 +171,9 @@ app.get('/webhook', (req, res) => {
 });
 app.post('/webhook', (req, res, next) => {
     try {
-        console.log(req.body);
         if (req.body.tweet_create_events) {
             req.body.tweet_create_events.forEach((ev) => {
+                console.log(ev);
                 if (!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")) {
                     if (ev.user.id_str !== "1461318388433956865") {
                         const text = decodeURIComponent(ev.text);
@@ -202,6 +204,7 @@ app.post('/webhook', (req, res, next) => {
         }
         if (req.body.direct_message_events) {
             req.body.direct_message_events.forEach((ev) => {
+                console.log(ev);
                 if (ev.message_create.sender_id != "1461318388433956865") {
                     const text = decodeURIComponent(ev.message_create.message_data.text);
                     if (text.startsWith("help")) {
