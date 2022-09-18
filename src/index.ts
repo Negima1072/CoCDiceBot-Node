@@ -1,25 +1,28 @@
-import { DynamicLoader, Version } from 'bcdice';
+import { DynamicLoader, Version } from "bcdice";
 
 let GameSystem: game_system;
 const loader = new DynamicLoader();
-loader.dynamicLoad('Cthulhu7th').then((v) => {
+loader.dynamicLoad("Cthulhu7th").then((v) => {
   GameSystem = v;
 });
 
-function getDiceroll(command: string): string{
+function getDiceroll(command: string): string {
   const result = GameSystem.eval(command);
-  if(!result) return "";
+  if (!result) return "";
   return result.text;
 }
 
-function getDiceVersion(): string{
+function getDiceVersion(): string {
   return Version;
 }
 
-const htmlDecode = function(str: string) {
-  return str.replace("&amp;", '&').replace("&gt;", '>').replace(
-        "&lt;", '<').replace("&quot", "'").replace("&#39",
-        "'");/*from w  w  w.  j  ava2 s.c o m*/
+const htmlDecode = function (str: string) {
+  return str
+    .replace("&amp;", "&")
+    .replace("&gt;", ">")
+    .replace("&lt;", "<")
+    .replace("&quot", "'")
+    .replace("&#39", "'"); /*from w  w  w.  j  ava2 s.c o m*/
 };
 
 const helpMes = `・判定　CC(x)<=（目標値）
@@ -75,12 +78,11 @@ const consumer_secret = process.env.CONSUMER_SECRET;
 const access_token = process.env.ACCESS_TOKEN_KEY;
 const access_token_secret = process.env.ACCESS_TOKEN_SECRET;
 
-
-if(!consumer_key || !consumer_secret){
+if (!consumer_key || !consumer_secret) {
   console.log("Error: Invaid Consumer Key or Secret");
   process.exit();
 }
-if(!access_token || !access_token_secret){
+if (!access_token || !access_token_secret) {
   console.log("Error: Invaid AccessToken Key or Secret");
   process.exit();
 }
@@ -89,50 +91,62 @@ const twitterClient = new twitter({
   consumer_key: consumer_key,
   consumer_secret: consumer_secret,
   access_token: access_token,
-  access_token_secret: access_token_secret
+  access_token_secret: access_token_secret,
 });
 
-function postTweet(content: string, replyId: string, callback: twitter.Callback){
-  twitterClient.post("statuses/update", {
-    status: content,
-    in_reply_to_status_id: replyId,
-    auto_populate_reply_metadata: true
-  }, callback);
+function postTweet(
+  content: string,
+  replyId: string,
+  callback: twitter.Callback
+) {
+  twitterClient.post(
+    "statuses/update",
+    {
+      status: content,
+      in_reply_to_status_id: replyId,
+      auto_populate_reply_metadata: true,
+    },
+    callback
+  );
 }
 
-function sendDM(content: string, senderId: string, callback: twitter.Callback){
-  twitterClient.post("direct_messages/events/new", {
-    event: {
-      type: "message_create",
-      message_create: {
-        target: {
-          recipient_id: senderId
+function sendDM(content: string, senderId: string, callback: twitter.Callback) {
+  twitterClient.post(
+    "direct_messages/events/new",
+    {
+      event: {
+        type: "message_create",
+        message_create: {
+          target: {
+            recipient_id: senderId,
+          },
+          message_data: {
+            text: content,
+          },
         },
-        message_data: {
-          text: content
-        }
-      }
-    }
-  } as twitter.Params, callback);
+      },
+    } as twitter.Params,
+    callback
+  );
 }
 
 import express, { Request, Response } from "express";
 import crypto from "crypto";
-import game_system from 'bcdice/lib/game_system';
+import game_system from "bcdice/lib/game_system";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req: Request, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
   try {
-    res.sendStatus(404);
+    res.redirect("https://twitter.com/CoC_dicebot");
   } catch (error) {
     res.sendStatus(500);
   }
 });
 
-app.get('/version', (req: Request, res: Response) => {
+app.get("/version", (req: Request, res: Response) => {
   try {
     res.send({ version: getDiceVersion() });
   } catch (error) {
@@ -142,142 +156,157 @@ app.get('/version', (req: Request, res: Response) => {
 
 interface WebhookGetRequest extends Request {
   query: {
-    crc_token: string | undefined
-  }
+    crc_token: string | undefined;
+  };
 }
 
 interface TweetCreateEvent {
-  id: number,
-  id_str: string,
-  retweeted_status: any | undefined,
+  id: number;
+  id_str: string;
+  retweeted_status: any | undefined;
   user: {
-    id_str: string,
-    screen_name: string
-  },
+    id_str: string;
+    screen_name: string;
+  };
   entities: {
-    user_mentions: Array<{id_str: string}>
-  },
-  text: string,
-
+    user_mentions: Array<{ id_str: string }>;
+  };
+  text: string;
 }
 
-interface DirectMessageEvent{
+interface DirectMessageEvent {
   message_create: {
-    sender_id: string,
+    sender_id: string;
     message_data: {
-      text: string
-    }
-  }
+      text: string;
+    };
+  };
 }
 
 interface WebhookPostRequest extends Request {
   body: {
-    tweet_create_events: Array<TweetCreateEvent> | undefined,
-    direct_message_events: Array<DirectMessageEvent> | undefined
-  }
+    tweet_create_events: Array<TweetCreateEvent> | undefined;
+    direct_message_events: Array<DirectMessageEvent> | undefined;
+  };
 }
 
-app.get('/webhook', (req: WebhookGetRequest, res: Response) => {
+app.get("/webhook", (req: WebhookGetRequest, res: Response) => {
   try {
-    if(!req.query.crc_token) res.sendStatus(400);
-    else{
-      const hmac = crypto.createHmac('sha256', consumer_secret).update(req.query.crc_token).digest('base64');
+    if (!req.query.crc_token) res.sendStatus(400);
+    else {
+      const hmac = crypto
+        .createHmac("sha256", consumer_secret)
+        .update(req.query.crc_token)
+        .digest("base64");
       res.send({ response_token: "sha256=" + hmac });
     }
   } catch (error) {
-    console.log("191",error);
+    console.log("191", error);
     res.sendStatus(500);
   }
 });
 
-app.post('/webhook', (req: WebhookPostRequest, res: Response, next) => {
-  try{
-    if(!req.body.tweet_create_events && !req.body.direct_message_events){
-      res.send({status: "none"});
+app.post("/webhook", (req: WebhookPostRequest, res: Response, next) => {
+  try {
+    if (!req.body.tweet_create_events && !req.body.direct_message_events) {
+      res.send({ status: "none" });
     }
-    if(req.body.tweet_create_events){
+    if (req.body.tweet_create_events) {
       const ev = req.body.tweet_create_events[0];
-      if(!ev.entities.user_mentions.every((m) => m.id_str !== "1461318388433956865")){
-        if(ev.user.id_str !== "1461318388433956865"){
+      if (
+        !ev.entities.user_mentions.every(
+          (m) => m.id_str !== "1461318388433956865"
+        )
+      ) {
+        if (ev.user.id_str !== "1461318388433956865") {
           const text = htmlDecode(decodeURIComponent(ev.text));
-          if(text.includes(" ")){
+          if (text.includes(" ")) {
             let reqTxt = "";
             text.split(" ").forEach((c) => {
-              if(c.slice(0,1) != "@"){
+              if (c.slice(0, 1) != "@") {
                 reqTxt += c;
                 reqTxt += " ";
               }
             });
             let resTxt = getDiceroll(reqTxt);
-            if(resTxt){
+            if (resTxt) {
               let resTxt2 = /*"@" + ev.user.screen_name + " " +*/ resTxt;
-              if(resTxt2.length >= 140){
-                resTxt2 = resTxt.slice(0,139) + "…";
-                sendDM("リプライの続き："+resTxt, ev.user.id_str, (er) => {
-                  postTweet(resTxt2, ev.id_str, () => {
-                    res.send({data: "success"});
-                  });
-                });
-              }
-              else{
+              if (resTxt2.length >= 140) {
+                resTxt2 = resTxt.slice(0, 139) + "…";
                 postTweet(resTxt2, ev.id_str, () => {
-                  res.send({data: "success"});
+                  sendDM(
+                    "https://twitter.com/" +
+                      ev.user.screen_name +
+                      "/status/" +
+                      ev.id_str,
+                    ev.user.id_str,
+                    (er) => {
+                      sendDM("" + resTxt, ev.user.id_str, (er) => {
+                        res.send({ data: "success" });
+                      });
+                    }
+                  );
+                });
+              } else {
+                postTweet(resTxt2, ev.id_str, () => {
+                  res.send({ data: "success" });
                 });
               }
+            } else {
+              postTweet(
+                "@" +
+                  ev.user.screen_name +
+                  " エラー：コマンドが正しくありません。",
+                ev.id_str,
+                () => {
+                  res.send({ data: "error" });
+                }
+              );
             }
-            else{
-              postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id_str, () => {
-                res.send({data: "error"});
-              })
-            }
+          } else {
+            res.send({ status: "none" });
           }
-          else{
-            res.send({status: "none"});
-          }
+        } else {
+          res.send({ status: "none" });
         }
-        else{
-          res.send({status: "none"});
-        }
-      }
-      else{
-        res.send({status: "none"});
+      } else {
+        res.send({ status: "none" });
       }
     }
-    if(req.body.direct_message_events){
+    if (req.body.direct_message_events) {
       const ev = req.body.direct_message_events[0];
-      if(ev.message_create.sender_id != "1461318388433956865"){
-        const text = htmlDecode(decodeURIComponent(ev.message_create.message_data.text));
-        if(text.startsWith("help")){
+      if (ev.message_create.sender_id != "1461318388433956865") {
+        const text = htmlDecode(
+          decodeURIComponent(ev.message_create.message_data.text)
+        );
+        if (text.startsWith("help")) {
           sendDM(helpMes, ev.message_create.sender_id, () => {
-            res.send({data: "success"});
+            res.send({ data: "success" });
           });
-        }
-        else{
+        } else {
           let resTxt = getDiceroll(text);
-          if(resTxt != ""){
+          if (resTxt != "") {
             sendDM(resTxt, ev.message_create.sender_id, () => {
-              res.send({data: "success"});
+              res.send({ data: "success" });
             });
-          }
-          else{
-            res.send({status: "none"});
+          } else {
+            res.send({ status: "none" });
           }
         }
-      }
-      else{
-        res.send({status: "none"});
+      } else {
+        res.send({ status: "none" });
       }
     }
   } catch (error) {
-    console.log("247",error);
+    console.log("247", error);
     res.sendStatus(500);
   }
-})
+});
 
 //app.listen(process.env.PORT || 3000);
 app.listen({ port: 80 }, () => {
   console.log(`CoC Dice Bot ready port 80.`);
 });
-console.log('Starts');
+console.log("Starts");
 
 export default app;

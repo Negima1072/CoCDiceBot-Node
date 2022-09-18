@@ -5,7 +5,8 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "rimraf dist && tsc",
-    "deploy": "npm run build && vercel --prod"
+    "deploy": "npm run build && vercel --prod",
+    "prettier": "npx prettier ./src/index.ts --write"
   },
   "author": "Negima1072",
   "license": "MIT",
@@ -13,6 +14,7 @@
     "@types/express": "^4.17.14",
     "@types/twit": "^2.2.30",
     "dotenv": "^16.0.2",
+    "prettier": "^2.7.1",
     "rimraf": "^3.0.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.3"

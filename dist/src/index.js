@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcdice_1 = require("bcdice");
 let GameSystem;
 const loader = new bcdice_1.DynamicLoader();
-loader.dynamicLoad('Cthulhu7th').then((v) => {
+loader.dynamicLoad("Cthulhu7th").then((v) => {
     GameSystem = v;
 });
 function getDiceroll(command) {
@@ -19,7 +19,12 @@ function getDiceVersion() {
     return bcdice_1.Version;
 }
 const htmlDecode = function (str) {
-    return str.replace("&amp;", '&').replace("&gt;", '>').replace("&lt;", '<').replace("&quot", "'").replace("&#39", "'");
+    return str
+        .replace("&amp;", "&")
+        .replace("&gt;", ">")
+        .replace("&lt;", "<")
+        .replace("&quot", "'")
+        .replace("&#39", "'");
 };
 const helpMes = `・判定　CC(x)<=（目標値）
 　x：ボーナス・ペナルティダイス。省略可。
@@ -83,13 +88,13 @@ const twitterClient = new twit_1.default({
     consumer_key: consumer_key,
     consumer_secret: consumer_secret,
     access_token: access_token,
-    access_token_secret: access_token_secret
+    access_token_secret: access_token_secret,
 });
 function postTweet(content, replyId, callback) {
     twitterClient.post("statuses/update", {
         status: content,
         in_reply_to_status_id: replyId,
-        auto_populate_reply_metadata: true
+        auto_populate_reply_metadata: true,
     }, callback);
 }
 function sendDM(content, senderId, callback) {
@@ -98,13 +103,13 @@ function sendDM(content, senderId, callback) {
             type: "message_create",
             message_create: {
                 target: {
-                    recipient_id: senderId
+                    recipient_id: senderId,
                 },
                 message_data: {
-                    text: content
-                }
-            }
-        }
+                    text: content,
+                },
+            },
+        },
     }, callback);
 }
 const express_1 = __importDefault(require("express"));
@@ -112,15 +117,15 @@ const crypto_1 = __importDefault(require("crypto"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
     try {
-        res.sendStatus(404);
+        res.redirect("https://twitter.com/CoC_dicebot");
     }
     catch (error) {
         res.sendStatus(500);
     }
 });
-app.get('/version', (req, res) => {
+app.get("/version", (req, res) => {
     try {
         res.send({ version: getDiceVersion() });
     }
@@ -128,12 +133,15 @@ app.get('/version', (req, res) => {
         res.sendStatus(500);
     }
 });
-app.get('/webhook', (req, res) => {
+app.get("/webhook", (req, res) => {
     try {
         if (!req.query.crc_token)
             res.sendStatus(400);
         else {
-            const hmac = crypto_1.default.createHmac('sha256', consumer_secret).update(req.query.crc_token).digest('base64');
+            const hmac = crypto_1.default
+                .createHmac("sha256", consumer_secret)
+                .update(req.query.crc_token)
+                .digest("base64");
             res.send({ response_token: "sha256=" + hmac });
         }
     }
@@ -142,7 +150,7 @@ app.get('/webhook', (req, res) => {
         res.sendStatus(500);
     }
 });
-app.post('/webhook', (req, res, next) => {
+app.post("/webhook", (req, res, next) => {
     try {
         if (!req.body.tweet_create_events && !req.body.direct_message_events) {
             res.send({ status: "none" });
@@ -165,9 +173,14 @@ app.post('/webhook', (req, res, next) => {
                             let resTxt2 = resTxt;
                             if (resTxt2.length >= 140) {
                                 resTxt2 = resTxt.slice(0, 139) + "…";
-                                sendDM("リプライの続き：" + resTxt, ev.user.id_str, (er) => {
-                                    postTweet(resTxt2, ev.id_str, () => {
-                                        res.send({ data: "success" });
+                                postTweet(resTxt2, ev.id_str, () => {
+                                    sendDM("https://twitter.com/" +
+                                        ev.user.screen_name +
+                                        "/status/" +
+                                        ev.id_str, ev.user.id_str, (er) => {
+                                        sendDM("" + resTxt, ev.user.id_str, (er) => {
+                                            res.send({ data: "success" });
+                                        });
                                     });
                                 });
                             }
@@ -178,7 +191,9 @@ app.post('/webhook', (req, res, next) => {
                             }
                         }
                         else {
-                            postTweet("@" + ev.user.screen_name + " エラー：コマンドが正しくありません。", ev.id_str, () => {
+                            postTweet("@" +
+                                ev.user.screen_name +
+                                " エラー：コマンドが正しくありません。", ev.id_str, () => {
                                 res.send({ data: "error" });
                             });
                         }
@@ -229,5 +244,5 @@ app.post('/webhook', (req, res, next) => {
 app.listen({ port: 80 }, () => {
     console.log(`CoC Dice Bot ready port 80.`);
 });
-console.log('Starts');
+console.log("Starts");
 exports.default = app;
