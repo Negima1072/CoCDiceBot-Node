@@ -206,62 +206,66 @@ app.get("/webhook", (req: WebhookGetRequest, res: Response) => {
   }
 });
 
-app.post("/webhook", (req: WebhookPostRequest, res: Response, next) => {
+app.post("/webhook", (req: WebhookPostRequest, res: Response) => {
   try {
     if (!req.body.tweet_create_events && !req.body.direct_message_events) {
       res.send({ status: "none" });
     }
     if (req.body.tweet_create_events) {
       const ev = req.body.tweet_create_events[0];
-      if (
-        !ev.entities.user_mentions.every(
-          (m) => m.id_str !== "1461318388433956865"
-        )
-      ) {
-        if (ev.user.id_str !== "1461318388433956865") {
-          const text = htmlDecode(decodeURIComponent(ev.text));
-          if (text.includes(" ")) {
-            let reqTxt = "";
-            text.split(" ").forEach((c) => {
-              if (c.slice(0, 1) != "@") {
-                reqTxt += c;
-                reqTxt += " ";
-              }
-            });
-            let resTxt = getDiceroll(reqTxt);
-            if (resTxt) {
-              let resTxt2 = /*"@" + ev.user.screen_name + " " +*/ resTxt;
-              if (resTxt2.length >= 140) {
-                resTxt2 = resTxt.slice(0, 139) + "…";
-                postTweet(resTxt2, ev.id_str, () => {
-                  sendDM(
-                    "https://twitter.com/" +
-                      ev.user.screen_name +
-                      "/status/" +
-                      ev.id_str,
-                    ev.user.id_str,
-                    (er) => {
-                      sendDM("" + resTxt, ev.user.id_str, (er) => {
-                        res.send({ data: "success" });
-                      });
-                    }
-                  );
-                });
+      if (ev.retweeted_status === undefined) {
+        if (
+          !ev.entities.user_mentions.every(
+            (m) => m.id_str !== "1461318388433956865"
+          )
+        ) {
+          if (ev.user.id_str !== "1461318388433956865") {
+            const text = htmlDecode(decodeURIComponent(ev.text));
+            if (text.includes(" ")) {
+              let reqTxt = "";
+              text.split(" ").forEach((c) => {
+                if (c.slice(0, 1) != "@") {
+                  reqTxt += c;
+                  reqTxt += " ";
+                }
+              });
+              let resTxt = getDiceroll(reqTxt);
+              if (resTxt) {
+                let resTxt2 = /*"@" + ev.user.screen_name + " " +*/ resTxt;
+                if (resTxt2.length >= 140) {
+                  resTxt2 = resTxt.slice(0, 139) + "…";
+                  postTweet(resTxt2, ev.id_str, () => {
+                    sendDM(
+                      "https://twitter.com/" +
+                        ev.user.screen_name +
+                        "/status/" +
+                        ev.id_str,
+                      ev.user.id_str,
+                      (er) => {
+                        sendDM("" + resTxt, ev.user.id_str, (er) => {
+                          res.send({ data: "success" });
+                        });
+                      }
+                    );
+                  });
+                } else {
+                  postTweet(resTxt2, ev.id_str, () => {
+                    res.send({ data: "success" });
+                  });
+                }
               } else {
-                postTweet(resTxt2, ev.id_str, () => {
-                  res.send({ data: "success" });
-                });
+                postTweet(
+                  "@" +
+                    ev.user.screen_name +
+                    " エラー：コマンドが正しくありません。",
+                  ev.id_str,
+                  () => {
+                    res.send({ data: "error" });
+                  }
+                );
               }
             } else {
-              postTweet(
-                "@" +
-                  ev.user.screen_name +
-                  " エラー：コマンドが正しくありません。",
-                ev.id_str,
-                () => {
-                  res.send({ data: "error" });
-                }
-              );
+              res.send({ status: "none" });
             }
           } else {
             res.send({ status: "none" });
