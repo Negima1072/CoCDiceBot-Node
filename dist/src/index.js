@@ -9,8 +9,13 @@ const loader = new bcdice_1.DynamicLoader();
 loader.dynamicLoad("Cthulhu7th").then((v) => {
     GameSystem = v;
 });
+function hankaku2Zenkaku(str) {
+    return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function (s) {
+        return String.fromCharCode(s.charCodeAt(0) - 0xfee0);
+    });
+}
 function getDiceroll(command) {
-    const result = GameSystem.eval(command);
+    const result = GameSystem.eval(hankaku2Zenkaku(command));
     if (!result)
         return "";
     return result.text;
